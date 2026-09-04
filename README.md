@@ -40,6 +40,8 @@ Final evaluation on the held-out test set (572 images, never used during trainin
 
 Healthy eyes are classified essentially perfectly. The main source of error is confusion between bacterial and fungal classes, not between either infection type and healthy.
 
+**Context on this number**: to gauge what a reasonable target looks like, I asked a practicing eye specialist how accurately bacterial vs fungal keratitis can be distinguished by unaided visual examination alone, without lab tests (culture, microscopy). Their estimate was **60-70%** — even trained clinicians cannot reliably tell the two apart from appearance alone in a meaningful fraction of cases, which is consistent with what this project's confusion matrix shows (near-perfect on healthy, genuine ambiguity between bacterial and fungal). This doesn't excuse the model's current performance, but it does suggest the ceiling for a vision-only classifier on this problem may be inherently below 100%, and that lab-confirmed diagnosis remains necessary regardless of model performance.
+
 ## Key findings and what didn't work
 
 Documenting the negative results is deliberate — most of the useful signal in this project came from ruling things out, not from one clean improvement:
