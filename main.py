@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from torchvision import models, transforms
 from PIL import Image, UnidentifiedImageError
-
+from fastapi.responses import JSONResponse, FileResponse
 from fastapi import FastAPI, UploadFile, File, HTTPException
 
 # 1. Create the FastAPI app
@@ -47,6 +47,11 @@ transform = transforms.Compose([
 async def health_check():
     return {"status": "ok", "message": "API is running", "device": str(device)}
 
+@app.get("/", include_in_schema=False)
+async def home():
+    return FileResponse("static/index.html")
+
+
 
 @app.post("/predict")
 async def predict(file : UploadFile = File(...)):
@@ -69,11 +74,12 @@ async def predict(file : UploadFile = File(...)):
         predicted_class = classes[predicted_index]
         confidence = probabilities[predicted_index].item()
 
-    return {
+    return  {
     "predicted_class": predicted_class,
     "confidence": round(confidence, 4),
     "probabilities": {
         name: round(probabilities[i].item(), 4)
         for i, name in enumerate(classes)
     }
+    
 }
