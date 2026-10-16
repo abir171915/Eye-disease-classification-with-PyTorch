@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Keratitis Screening</title>
+  <style>
+    :root {
+      --bg: #f3f6f9;
+      --surface: #ffffff;
+      --border: #dde4ec;
+      --text: #1c2b3a;
+      --muted: #5f7184;
+      --primary: #0b6e8a;
+      --primary-dark: #08566c;
+      --bact: #c2410c;
+      --fung: #7c3aed;
+      --healthy: #15803d;
+      --warn-bg: #fff7e6;
+      --warn-border: #f0c36d;
+      --error: #b91c1c;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+    }
+
+    /* Header */
+    header {
+      background: var(--surface);
+      border-bottom: 3px solid var(--primary);
+      padding: 14px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand-icon {
+      width: 34px; height: 34px; border-radius: 8px;
+      background: var(--primary); color: #fff;
+      display: grid; place-items: center; font-weight: 700;
+    }
+    .brand h1 { font-size: 1.1rem; margin: 0; }
+    .brand p { font-size: 0.8rem; margin: 0; color: var(--muted); }
+    .status { font-size: 0.8rem; color: var(--muted); display: flex; align-items: center; gap: 6px; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; background: #9ca3af; }
+    .dot.ok { background: var(--healthy); }
+    .dot.down { background: var(--error); }
+
+    /* Layout */
+    main {
+      max-width: 1100px;
+      margin: 24px auto;
+      padding: 0 16px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media (max-width: 800px) { main { grid-template-columns: 1fr; } }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .card h2 {
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      margin: 0 0 14px;
+    }
+
+    /* Upload */
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: 10px;
+      min-height: 280px;
+      display: grid;
+      place-items: center;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.15s, background 0.15s;
+      overflow: hidden;
+      position: relative;
+    }
+    .dropzone:hover, .dropzone.drag { border-color: var(--primary); background: #eef7fa; }
+    .dropzone img { width: 100%; height: 280px; object-fit: contain; background: #0f1720; }
+    .dropzone .hint { color: var(--muted); font-size: 0.9rem; padding: 16px; }
+    .dropzone .hint strong { color: var(--primary); }
+    .file-meta { font-size: 0.8rem; color: var(--muted); margin-top: 8px; min-height: 1em; }
+    .actions { display: flex; gap: 10px; margin-top: 14px; }
+    button {
+      font: inherit; font-weight: 600;
+      border-radius: 8px; padding: 10px 18px;
+      cursor: pointer; border: 1px solid transparent;
+    }
+    .btn-primary { background: var(--primary); color: #fff; flex: 1; }
+    .btn-primary:hover:not(:disabled) { background: var(--primary-dark); }
+    .btn-secondary { background: var(--surface); color: var(--text); border-color: var(--border); }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Results */
+    .empty { color: var(--muted); font-size: 0.9rem; text-align: center; padding: 60px 10px; }
+    .verdict {
+      border-left: 5px solid var(--primary);
+      padding: 12px 16px;
+      background: var(--bg);
+      border-radius: 6px;
+      margin-bottom: 18px;
+    }
+    .verdict .label { font-size: 0.8rem; color: var(--muted); }
+    .verdict .value { font-size: 1.5rem; font-weight: 700; }
+    .verdict .conf { font-size: 0.9rem; color: var(--muted); }
+    .bar-row { margin-bottom: 12px; }
+    .bar-head { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 4px; }
+    .bar-track { height: 10px; background: #e6ebf1; border-radius: 5px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 5px; width: 0; transition: width 0.5s ease; }
+    .notice {
+      margin-top: 16px;
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 0.85rem;
+      background: var(--warn-bg);
+      border: 1px solid var(--warn-border);
+    }
+    .error { color: var(--error); font-size: 0.9rem; margin-top: 10px; }
+    .spinner {
+      width: 28px; height: 28px; margin: 60px auto;
+      border: 3px solid var(--border); border-top-color: var(--primary);
+      border-radius: 50%; animation: spin 0.8s linear infinite;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    footer {
+      max-width: 1100px;
+      margin: 0 auto 24px;
+      padding: 0 16px;
+      font-size: 0.78rem;
+      color: var(--muted);
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="brand-icon">K</div>
+      <div>
+        <h1>Keratitis Screening Assistant</h1>
+        <p>Bacterial · Fungal · Healthy - ResNet50 classifier</p>
+      </div>
+    </div>
+    <div class="status"><span class="dot" id="statusDot"></span><span id="statusText">Checking service…</span></div>
+  </header>
+
+  <main>
+    <section class="card">
+      <h2>Patient image</h2>
+      <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Upload eye image">
+        <div class="hint" id="hint">
+          <strong>Click to upload</strong> or drag and drop<br />
+          Slit-lamp / clinical eye photograph · PNG or JPG
+        </div>
+      </div>
+      <input type="file" id="fileInput" accept=".png,.jpg,.jpeg" hidden />
+      <div class="file-meta" id="fileMeta"></div>
+      <div class="actions">
+        <button class="btn-secondary" id="clearBtn" disabled>Clear</button>
+        <button class="btn-primary" id="analyzeBtn" disabled>Analyze image</button>
+      </div>
+      <div class="error" id="error"></div>
+    </section>
+
+    <section class="card">
+      <h2>Analysis result</h2>
+      <div id="result"><div class="empty">Upload an image and click <b>Analyze</b> to see the model's assessment.</div></div>
+    </section>
+  </main>
+
+  <footer>
+    For research and educational use only. This tool is not a medical device and must not be used as the sole basis
+    for diagnosis or treatment. Bacterial keratitis recall on the held-out test set was 0.50, so negative or
+    low-confidence results need clinical confirmation (e.g. corneal scraping and culture).
+  </footer>
+
+  <script>
+    // Display names and colors for the API's class keys
+    const CLASSES = {
+      bact:    { name: "Bacterial keratitis", color: "var(--bact)" },
+      fung:    { name: "Fungal keratitis",    color: "var(--fung)" },
+      healthy: { name: "Healthy",             color: "var(--healthy)" },
+    };
+    const LOW_CONFIDENCE = 0.70;
+
+    const dropzone   = document.getElementById("dropzone");
+    const fileInput  = document.getElementById("fileInput");
+    const fileMeta   = document.getElementById("fileMeta");
+    const analyzeBtn = document.getElementById("analyzeBtn");
+    const clearBtn   = document.getElementById("clearBtn");
+    const resultEl   = document.getElementById("result");
+    const errorEl    = document.getElementById("error");
+    const hintHTML   = document.getElementById("hint").outerHTML;
+
+    let selectedFile = null;
+
+    // Health check: shows whether the backend is reachable
+    fetch("/health")
+      .then(r => r.json())
+      .then(d => setStatus(true, `Service online · ${d.device}`))
+      .catch(() => setStatus(false, "Service unavailable"));
+
+    function setStatus(ok, text) {
+      document.getElementById("statusDot").className = "dot " + (ok ? "ok" : "down");
+      document.getElementById("statusText").textContent = text;
+    }
+
+    // File selection (click, keyboard, drag-and-drop)
+    dropzone.addEventListener("click", () => fileInput.click());
+    dropzone.addEventListener("keydown", e => { if (e.key === "Enter" || e.key === " ") fileInput.click(); });
+    fileInput.addEventListener("change", () => fileInput.files[0] && selectFile(fileInput.files[0]));
+    dropzone.addEventListener("dragover", e => { e.preventDefault(); dropzone.classList.add("drag"); });
+    dropzone.addEventListener("dragleave", () => dropzone.classList.remove("drag"));
+    dropzone.addEventListener("drop", e => {
+      e.preventDefault();
+      dropzone.classList.remove("drag");
+      if (e.dataTransfer.files[0]) selectFile(e.dataTransfer.files[0]);
+    });
+
+    function selectFile(file) {
+      errorEl.textContent = "";
+      if (!/\.(png|jpe?g)$/i.test(file.name)) {
+        errorEl.textContent = "Please upload a PNG or JPG image.";
+        return;
+      }
+      selectedFile = file;
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(file);
+      img.alt = "Uploaded eye image";
+      dropzone.replaceChildren(img);
+      fileMeta.textContent = `${file.name} · ${(file.size / 1024).toFixed(0)} KB`;
+      analyzeBtn.disabled = false;
+      clearBtn.disabled = false;
+      resetResult();
+    }
+
+    clearBtn.addEventListener("click", () => {
+      selectedFile = null;
+      fileInput.value = "";
+      dropzone.innerHTML = hintHTML;
+      fileMeta.textContent = "";
+      errorEl.textContent = "";
+      analyzeBtn.disabled = true;
+      clearBtn.disabled = true;
+      resetResult();
+    });
+
+    function resetResult() {
+      resultEl.innerHTML = '<div class="empty">Upload an image and click <b>Analyze</b> to see the model\'s assessment.</div>';
+    }
+
+    // Send the image to the FastAPI /predict endpoint
+    analyzeBtn.addEventListener("click", async () => {
+      if (!selectedFile) return;
+      errorEl.textContent = "";
+      analyzeBtn.disabled = true;
+      resultEl.innerHTML = '<div class="spinner"></div>';
+
+      const form = new FormData();
+      form.append("file", selectedFile); // key must match the `file` parameter in main.py
+
+      try {
+        const res = await fetch("/predict", { method: "POST", body: form });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.detail || `Server error (${res.status})`);
+        renderResult(data);
+      } catch (err) {
+        resetResult();
+        errorEl.textContent = `Analysis failed: ${err.message}`;
+      } finally {
+        analyzeBtn.disabled = false;
+      }
+    });
+
+    function renderResult(data) {
+      const top = CLASSES[data.predicted_class] || { name: data.predicted_class, color: "var(--primary)" };
+      const pct = p => (p * 100).toFixed(1) + "%";
+
+      const bars = Object.entries(data.probabilities)
+        .sort((a, b) => b[1] - a[1])
+        .map(([key, p]) => {
+          const c = CLASSES[key] || { name: key, color: "var(--primary)" };
+          return `
+            <div class="bar-row">
+              <div class="bar-head"><span>${c.name}</span><span>${pct(p)}</span></div>
+              <div class="bar-track"><div class="bar-fill" style="background:${c.color}" data-w="${p * 100}"></div></div>
+            </div>`;
+        }).join("");
+
+      const notice = data.confidence < LOW_CONFIDENCE
+        ? `<div class="notice"><b>Low confidence.</b> The model is uncertain between classes. Treat this result as inconclusive and refer for clinical evaluation.</div>`
+        : "";
+
+      resultEl.innerHTML = `
+        <div class="verdict" style="border-left-color:${top.color}">
+          <div class="label">Most likely finding</div>
+          <div class="value" style="color:${top.color}">${top.name}</div>
+          <div class="conf">Model confidence: ${pct(data.confidence)}</div>
+        </div>
+        <h2>Class probabilities</h2>
+        ${bars}
+        ${notice}`;
+
+      // Animate bars after they are in the DOM
+      requestAnimationFrame(() =>
+        resultEl.querySelectorAll(".bar-fill").forEach(el => el.style.width = el.dataset.w + "%"));
+    }
+  </script>
+</body>
+</html>
